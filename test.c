@@ -88,7 +88,7 @@ SolClient *test_sol_client_new(const char *url)
 
 void test_sol_airdrop()
 {
-    SolClient *client = new_sol_client(devnet_url);
+    SolClient *client = new_sol_client_with_commitment(devnet_url, 0);
     if (client != NULL)
     {
         SolKeyPair *wallet = load_wallet_from_file(file_path);
@@ -470,19 +470,65 @@ void test_transfer() { test_transfer_sol(); }
 void test_smart_contract() { test_counter(); }
 void test()
 {
+    // these measure_time are already included set up step time
+    // if you want to measure only the function time, you can remove the set up time mannually
+
     printf("\n| **Function**                      | **Execution Time** |\n");
     printf("|-----------------------------------|------------------|\n");
 
     // measure_time("Wallet Creation", test_wallet_creation);
     // measure_time("Wallet Loading", test_wallet_loading);
-    measure_time("Airdrop Request", test_airdrop);
-    measure_time("Mint SPL Token", test_mint_token);
-    measure_time("Transfer SPL Token", test_transfer_spl);
+    // measure_time("Airdrop Request", test_airdrop);
+    // measure_time("Mint SPL Token", test_mint_token);
+    // measure_time("Transfer SOL", test_transfer);
+    // measure_time("Transfer SPL Token", test_transfer_spl);
     // measure_time("Test Smart Contract", test_smart_contract);
 }
 
 int main()
 {
-    test();
+
+    SolClient *client = new_sol_client_with_commitment(devnet_url, 0);
+    if (client != NULL)
+    {
+        SolKeyPair *wallet = load_wallet_from_file(file_path);
+        if (wallet != NULL)
+        {
+            SolPublicKey *pub = get_public_key(wallet);
+            uint64_t lamports = 100000000;
+
+            struct timeval start, end;
+            gettimeofday(&start, NULL); // Start timing
+
+            bool success = request_airdrop_async(client, pub, lamports);
+
+            gettimeofday(&end, NULL); // End timing
+
+            // Compute execution time in milliseconds
+            double elapsed_time = ((end.tv_sec - start.tv_sec) * 1000.0) +
+                                  ((end.tv_usec - start.tv_usec) / 1000.0);
+
+            printf("| %-30s | %-10.3f ms |\n", request_airdrop, elapsed_time);
+            if (success)
+            {
+                printf("Airdrop successful.\n");
+            }
+            else
+            {
+                printf("Airdrop failed.\n");
+            }
+            // get balance
+            uint64_t balance = get_balance(client, pub);
+            printf("Balance: %lu\n", balance);
+        }
+        else
+        {
+            printf("Failed to load wallet.\n");
+        }
+    }
+    else
+    {
+        printf("Failed to create Solana Client.\n");
+    }
     return 0;
 }

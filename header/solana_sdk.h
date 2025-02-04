@@ -45,11 +45,17 @@ typedef struct SolSecretKey {
   uint8_t data[64];
 } SolSecretKey;
 
+struct SolClient *new_sol_client_with_commitment(const char *url, uint8_t commitment_level);
+
 struct SolClient *new_sol_client(const char *url);
 
 uint64_t get_balance(struct SolClient *client, struct SolPublicKey *pubkey);
 
 bool request_airdrop(struct SolClient *client, struct SolPublicKey *pubkey, uint64_t lamports);
+
+bool request_airdrop_async(struct SolClient *client,
+                           struct SolPublicKey *pubkey,
+                           uint64_t lamports);
 
 struct SolPublicKey get_system_program_id(void);
 
